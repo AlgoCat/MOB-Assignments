@@ -12,16 +12,18 @@ class ViewController: UIViewController {
 
     
     var currentResult:Double = 0
-    var operationResult:Double = 0
     
-    var firstNumber:Double = 0
-    var secondNumber:Double = 0
+    
+    
+    var previousNumber:Double = 0
+    var operationResult:Double = 0
+    var previousOperation = ""
+    var isLastOperationEqual = false
+    var isACMode = true
     
     var display:String = "0"
     
-    var isTypingNumber:Bool = false
-    var isFirstOperand:Bool = true;
-    var previousOperation = ""
+    
     
     
     override func viewDidLoad() {
@@ -29,18 +31,34 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
         
         displayResult()
-        
     }
     
+    func displayError()
+    {
+        display = ""
+        ResultLabel.text = "Error"
+    }
     
     func displayResult()
+    {
+        var number = display.toDouble()!
+        
+        let formatter = NSNumberFormatter()
+        formatter.numberStyle = .DecimalStyle
+        formatter.locale = NSLocale.currentLocale()
+        
+        ResultLabel.text = formatter.stringFromNumber(number)
+    }
+    
+    func displayCalcResult()
     {
         let formatter = NSNumberFormatter()
         formatter.numberStyle = .DecimalStyle
         formatter.locale = NSLocale.currentLocale()
         
-        ResultLabel.text = formatter.stringFromNumber(currentResult)
+        ResultLabel.text = formatter.stringFromNumber(operationResult)
     }
+    
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -53,54 +71,99 @@ class ViewController: UIViewController {
     @IBOutlet weak var ResultLabel: UILabel!
     
     @IBAction func Clear(sender: AnyObject) {
-        currentResult = 0
-        operationResult = 0
+        previousNumber = 0
         display = "0"
-        previousOperation = ""
+        if (isACMode) {
+            operationResult = 0
+            previousNumber = 0
+            display = "0"
+            previousOperation = ""
+        }
+        else {
+            clear.setTitle("AC", forState: .Normal)
+            isACMode = true;
+        }
+    
         displayResult()
-        clear.setTitle("AC", forState: .Normal)
     }
 
     @IBAction func changeSign(sender: AnyObject) {
-        currentResult = currentResult * -1
+        operationResult = operationResult * -1
         
         println(display)
-        displayResult()
+        displayCalcResult()
     }
     
     @IBAction func percentage(sender: AnyObject) {
-        currentResult = currentResult / 100
-        display = String(format: "%f", currentResult)
+        operationResult = operationResult / 100
+        display = String(format: "%f", operationResult)
         println(display)
-        displayResult()
+        displayCalcResult()
+    }
+    
+    func doOperation() -> Bool
+    {
+        switch previousOperation {
+        case "+":
+            operationResult = operationResult + previousNumber
+        case "-":
+            operationResult = operationResult - previousNumber
+        case "*":
+            operationResult = operationResult * previousNumber
+        case "/":
+            if (previousNumber != 0) {
+                operationResult = operationResult / previousNumber
+            }
+            else {
+                return false // return fail
+            }
+        default:
+            operationResult = previousNumber
+        }
         
+        return true // return sucess
     }
     
     
     @IBAction func divide(sender: AnyObject) {
         
-        /*var temp = display.toDouble()!
-        
-        operationResult = operationResult / temp
-        
-        currentResult = operationResult
-        display = ""
-        
-        displayResult()*/
-        
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
+        }
+        var success = false
+        if (!isLastOperationEqual) {
+            success = doOperation()
+        }
+        if (success) {
+            isLastOperationEqual = false
+            previousOperation = "/"
+            display = ""
+            displayCalcResult()
+        }
+        else {
+            displayError()
+        }
     }
     
     
     @IBAction func multiply(sender: AnyObject) {
         
-        /*var temp = display.toDouble()!
-        
-        operationResult = operationResult * temp
-        
-        currentResult = operationResult
-        display = ""
-        
-        displayResult()*/
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
+        }
+        var success = false
+        if (!isLastOperationEqual) {
+            success = doOperation()
+        }
+        if (success) {
+            isLastOperationEqual = false
+            previousOperation = "*"
+            display = ""
+            displayCalcResult()
+        }
+        else {
+            displayError()
+        }
     }
     
     var temp:Double = 0
@@ -108,60 +171,61 @@ class ViewController: UIViewController {
     @IBAction func subtract(sender: AnyObject) {
         
 
-        
-        temp = display.toDouble()!
-        
-        
-        doOperation(temp)
-        currentResult = operationResult
-        previousOperation = "-"
-        display = ""
-        displayResult()
-
-
-    }
-    
-    
-    func doOperation(newNumber:Double)
-    {
-        switch previousOperation {
-            case "+":
-                operationResult = operationResult + newNumber
-            case "-":
-                operationResult = operationResult - newNumber
-            default:
-                operationResult = newNumber
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
         }
-        
-        
-    }
+        var success = false
+        if (!isLastOperationEqual) {
+            success = doOperation()
+        }
+        if (success) {
+            isLastOperationEqual = false
+            previousOperation = "-"
+            display = ""
+            displayCalcResult()
+        }
+        else {
+            displayError()
+        }    }
+    
     
     
     
     @IBAction func addition(sender: AnyObject) {
-        
-        
-        temp = display.toDouble()!
-        
-        
-        doOperation(temp)
-        currentResult = operationResult
-           
-        
-        previousOperation = "+"
-        display = ""
-        displayResult()
-    
+
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
+        }
+        var success = false
+        if (!isLastOperationEqual) {
+            success = doOperation()
+        }
+        if (success) {
+            isLastOperationEqual = false
+            previousOperation = "+"
+            display = ""
+            displayCalcResult()
+        }
+        else {
+            displayError()
+        }
     }
     
     @IBAction func equals(sender: AnyObject) {
         
-        temp = display.toDouble()!
-        doOperation(temp)
-        currentResult = operationResult
-
-        display = ""
-        displayResult()
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
+        }
+        // repeat last operation if possible
+        var success = doOperation()
+        if (success) {
+            isLastOperationEqual = true
+            display = ""
+            displayCalcResult()
+        }
+        else {
+            displayError()
+        }
 
     }
     
@@ -217,10 +281,9 @@ class ViewController: UIViewController {
     
     func updateDisplay(num:String) {
         display += num
-        currentResult = display.toDouble()!
         displayResult()
-        
-        
+        isACMode = false
+    
         clear.setTitle("C", forState: .Normal)
     }
 }
