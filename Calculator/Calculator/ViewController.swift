@@ -42,10 +42,15 @@ class ViewController: UIViewController {
     func displayResult()
     {
         var number = display.toDouble()!
+
         
         let formatter = NSNumberFormatter()
         formatter.numberStyle = .DecimalStyle
         formatter.locale = NSLocale.currentLocale()
+        formatter.maximumFractionDigits = 10
+        /*if number < 0.0000000001 && number != 0 {
+            formatter.numberStyle = .ScientificStyle
+        }*/
         
         ResultLabel.text = formatter.stringFromNumber(number)
     }
@@ -55,10 +60,27 @@ class ViewController: UIViewController {
         let formatter = NSNumberFormatter()
         formatter.numberStyle = .DecimalStyle
         formatter.locale = NSLocale.currentLocale()
+        formatter.maximumFractionDigits = 10
+        /*if operationResult < 0.0000000001 && operationResult != 0 {
+            formatter.numberStyle = .ScientificStyle
+        }*/
         
         ResultLabel.text = formatter.stringFromNumber(operationResult)
     }
     
+    
+    func displayCurrentResult()
+    {
+        let formatter = NSNumberFormatter()
+        formatter.numberStyle = .DecimalStyle
+        formatter.locale = NSLocale.currentLocale()
+        formatter.maximumFractionDigits = 10
+        /*if currentResult < 0.0000000001 && currentResult != 0 {
+            formatter.numberStyle = .ScientificStyle
+        }*/
+        
+        ResultLabel.text = formatter.stringFromNumber(currentResult)
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -76,8 +98,10 @@ class ViewController: UIViewController {
         if (isACMode) {
             operationResult = 0
             previousNumber = 0
+            currentResult = 0
             display = "0"
             previousOperation = ""
+            isLastOperationEqual = false
         }
         else {
             clear.setTitle("AC", forState: .Normal)
@@ -88,17 +112,64 @@ class ViewController: UIViewController {
     }
 
     @IBAction func changeSign(sender: AnyObject) {
-        operationResult = operationResult * -1
         
-        println(display)
-        displayCalcResult()
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
+        }
+        else {
+            display = ResultLabel.text!
+            previousNumber = display.toDouble()!
+            
+        }
+        
+        var success = true
+        var lastOperation = previousOperation
+        previousOperation = "+-"
+        success = doOperation()
+        previousOperation = lastOperation
+        
+        if (success) {
+            isLastOperationEqual = false
+            previousNumber = currentResult
+            println(previousNumber)
+            println(previousOperation)
+            display = ""
+            displayCurrentResult()
+        }
+        else {
+            displayError()
+        }
+
     }
     
     @IBAction func percentage(sender: AnyObject) {
-        operationResult = operationResult / 100
-        display = String(format: "%f", operationResult)
-        println(display)
-        displayCalcResult()
+        if display.toDouble() != nil {
+            previousNumber = display.toDouble()!
+        }
+        else {
+            display = ResultLabel.text!
+            previousNumber = display.toDouble()!
+            
+        }
+        
+        var success = true
+        var lastOperation = previousOperation
+        previousOperation = "%"
+        success = doOperation()
+        previousOperation = lastOperation
+        
+        if (success) {
+            isLastOperationEqual = false
+            previousNumber = currentResult
+            println(previousNumber)
+            println(previousOperation)
+            display = ""
+            displayCurrentResult()
+        }
+        else {
+            displayError()
+        }
+
     }
     
     func doOperation() -> Bool
@@ -117,6 +188,14 @@ class ViewController: UIViewController {
             else {
                 return false // return fail
             }
+        case "+-":
+            currentResult = previousNumber * -1
+            println(operationResult)
+        case "%":
+            currentResult = previousNumber / 100
+            println(operationResult)
+        case "doNothing":
+            println(operationResult)
         default:
             operationResult = previousNumber
         }
@@ -130,7 +209,7 @@ class ViewController: UIViewController {
         if display.toDouble() != nil {
             previousNumber = display.toDouble()!
         }
-        var success = false
+        var success = true
         if (!isLastOperationEqual) {
             success = doOperation()
         }
@@ -151,7 +230,7 @@ class ViewController: UIViewController {
         if display.toDouble() != nil {
             previousNumber = display.toDouble()!
         }
-        var success = false
+        var success = true
         if (!isLastOperationEqual) {
             success = doOperation()
         }
@@ -174,7 +253,7 @@ class ViewController: UIViewController {
         if display.toDouble() != nil {
             previousNumber = display.toDouble()!
         }
-        var success = false
+        var success = true
         if (!isLastOperationEqual) {
             success = doOperation()
         }
@@ -186,7 +265,8 @@ class ViewController: UIViewController {
         }
         else {
             displayError()
-        }    }
+        }
+    }
     
     
     
@@ -196,7 +276,7 @@ class ViewController: UIViewController {
         if display.toDouble() != nil {
             previousNumber = display.toDouble()!
         }
-        var success = false
+        var success = true
         if (!isLastOperationEqual) {
             success = doOperation()
         }
@@ -229,13 +309,47 @@ class ViewController: UIViewController {
 
     }
     
+    var hasDot = false;
     
     @IBAction func dot(sender: AnyObject) {
+        if display.rangeOfString(".") == nil {
+            trimZero()
+            
+            
+            hasDot = true
+            display = display + "."
+            ResultLabel.text = display
+            
+        }
+        
     }
     
     
+    
+    func trimZero() {
+        
+        if (count(display) > 1) {
+        if (display[0] == "0" && display[1] != "." && display[1] != "0") {
+            display = display.substringFromIndex(advance(display.startIndex, 1))
+            
+        }
+        }
+        
+    }
+    
     @IBAction func zero(sender: AnyObject) {
-        updateDisplay("0")
+        if (hasDot) {
+            if display != "0" {
+                display = display + "0"
+            }
+            ResultLabel.text = display
+        
+        }
+        else {
+        
+            updateDisplay("0")
+            
+        }
     }
 
     
@@ -280,7 +394,13 @@ class ViewController: UIViewController {
     }
     
     func updateDisplay(num:String) {
-        display += num
+        if display == "0" && num == "0" {
+            display = "0"
+        }
+        else {
+           display += num
+        }
+        
         displayResult()
         isACMode = false
     
@@ -288,9 +408,26 @@ class ViewController: UIViewController {
     }
 }
 
+
+
 extension String {
     func toDouble() -> Double? {
         return NSNumberFormatter().numberFromString(self)?.doubleValue
+    }
+}
+
+extension String {
+    
+    subscript (i: Int) -> Character {
+        return self[advance(self.startIndex, i)]
+    }
+    
+    subscript (i: Int) -> String {
+        return String(self[i] as Character)
+    }
+    
+    subscript (r: Range<Int>) -> String {
+        return substringWithRange(Range(start: advance(startIndex, r.startIndex), end: advance(startIndex, r.endIndex)))
     }
 }
 
