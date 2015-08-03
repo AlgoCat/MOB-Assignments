@@ -36,7 +36,6 @@ class StudentProfileViewController: UIViewController {
             phoneLabel.text = ""
         }
         
-        
         // student's profile pic
         if let url = NSURL(string: student.profilePicURL) {
             if let data = NSData(contentsOfURL: url){
